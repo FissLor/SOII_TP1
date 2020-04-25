@@ -50,3 +50,12 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+
+
+#ISO
+*.iso
+/Server/iso/bionicpup32-8.0-uefi.iso
+/Server/iso/bionicpup64-8.0-uefi.iso
+/Client/bin/
+/Server/bin/
