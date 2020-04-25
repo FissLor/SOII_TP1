@@ -1,0 +1,2 @@
+/usr/bin/ar qc libMD5.a  CMakeFiles/MD5.dir/MD5.c.o
+/usr/bin/ranlib libMD5.a

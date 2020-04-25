@@ -1,0 +1,2 @@
+/usr/bin/ar qc libDirectory.a  CMakeFiles/Directory.dir/dir.c.o
+/usr/bin/ranlib libDirectory.a

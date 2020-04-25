@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/lfiss/CLionProjects/TP1/Server/Common/MD5/MD5.c
+MD5.h
+/home/lfiss/CLionProjects/TP1/Server/Common/MD5/MD5.h
+openssl/md5.h
+-
+stdio.h
+-
+stdlib.h
+-
+
+/home/lfiss/CLionProjects/TP1/Server/Common/MD5/MD5.h
+
