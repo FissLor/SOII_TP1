@@ -57,5 +57,7 @@ dkms.conf
 *.iso
 /Server/iso/bionicpup32-8.0-uefi.iso
 /Server/iso/bionicpup64-8.0-uefi.iso
-/Client/bin/
+
+
 /Server/bin/
+/Client/bin/

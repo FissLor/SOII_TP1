@@ -2,64 +2,61 @@
 // Created by lfiss on 25/4/20.
 //
 
+#include <stdint.h>
 #ifndef _MBR_H_
 #define _MBR_H_
+#define MBR_SIZE 512
+
+
+
+
+typedef struct partition {
+    /// Boot Indicator (80h = active)
+    uint8_t boot;
+    /// Starting CHS values
+    uint8_t chs_start[3];
+    /// Partition-type Descriptor
+    uint8_t type;
+    ///Table Entry for Primary Partition # 4
+    uint8_t chs_end[3];
+    uint8_t start[4];
+    uint8_t size[4];
+
+
+} __attribute__ ((__packed__)) partition;
+
+typedef struct mpt {
+    /// Table Entry for Primary Partition # 1
+    partition table_entry1;
+    /// Table Entry for Primary Partition # 2
+    partition table_entry2;
+    /// Table Entry for Primary Partition # 3
+    partition table_entry3;
+    ///Table Entry for Primary Partition # 4
+    partition table_entry4;
+} __attribute__ ((__packed__)) mpt;
+
+
+
+typedef struct mbr {
+    /// Code Area
+    uint8_t code_area[446];
+    ///
+    mpt partition_table;
+    /// 2 byte Master Record Signature
+    uint8_t signature[2];
+} __attribute__ ((__packed__)) mbr;
+
+void getMBR(FILE* file,  mbr *masterBR);
+void printPT(mbr *masterBR);
+
 
 #endif //_MBR_H_
 
 
-typedef struct _sbmp_ftype_data {
-    /// A 2 character string value in ASCII to specify a DIB file type.
-    /// It must be 'BM' or '0x42 0x4D' in hexadecimals for modern compatibility reasons.
-    uint16_t file_type; // (Endianness) 'BM' - '0x42 0x4D' (Endianness)
-    /// Entire file size in bytes. This value is basically the number of bytes in a BMP image file.
-    uint32_t file_size;
-    /// It should be initialized to '0' integer (unsigned) value.
-    uint32_t reserved;
-    ///  the offset of actual pixel data in bytes.
-    /// In nutshell:- it is the number of bytes between start of the file (0) and the first byte of the pixel data.
-    uint32_t data_offset;
-} __attribute__ ((__packed__)) sbmp_ftype_data;
 
-typedef struct _mbr {
-    /// A 2 character string value in ASCII to specify a DIB file type.
-    /// It must be 'BM' or '0x42 0x4D' in hexadecimals for modern compatibility reasons.
-    uint8_t file_type; // (Endianness) 'BM' - '0x42 0x4D' (Endianness)
-    /// Entire file size in bytes. This value is basically the number of bytes in a BMP image file.
-    uint32_t file_size;
-    /// It should be initialized to '0' integer (unsigned) value.
-    uint32_t reserved;
-    ///  the offset of actual pixel data in bytes.
-    /// In nutshell:- it is the number of bytes between start of the file (0) and the first byte of the pixel data.
-    uint32_t data_offset;
-} __attribute__ ((__packed__)) mbr;
 
-typedef struct _mpt {
-    /// A 2 character string value in ASCII to specify a DIB file type.
-    /// It must be 'BM' or '0x42 0x4D' in hexadecimals for modern compatibility reasons.
-    uint8_t file_type; // (Endianness) 'BM' - '0x42 0x4D' (Endianness)
-    /// Entire file size in bytes. This value is basically the number of bytes in a BMP image file.
-    uint32_t file_size;
-    /// It should be initialized to '0' integer (unsigned) value.
-    uint32_t reserved;
-    ///  the offset of actual pixel data in bytes.
-    /// In nutshell:- it is the number of bytes between start of the file (0) and the first byte of the pixel data.
-    uint32_t data_offset;
 
-} __attribute__ ((__packed__)) mbr;
-
-typedef struct _mbr {
-
-    /// Table Entry for Primary Partition # 1
-    uint16_t file_type; // (Endianness) 'BM' - '0x42 0x4D' (Endianness)
-    /// Table Entry for Primary Partition # 2
-    uint16_t file_size;
-    /// Table Entry for Primary Partition # 3
-    uint16_t reserved;
-
-    ///Table Entry for Primary Partition # 4
-    uint16_t data_offset;
-} __attribute__ ((__packed__)) mpt;
 
 
 

@@ -13,6 +13,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include "../../lib/MD5/MD5.h"
+#include "../../lib/MBR/MBR.h"
 
 #define TAM 256
 #define DEFAULT_PORT 2000
@@ -76,6 +77,8 @@ int32_t main (int argc, char *argv[])
  */
 int32_t config (int argc, char *argv[])
 {
+  mbr file_mbr;
+  printf("Tamano de mbr struct: %lu",sizeof(file_mbr));
   char *host;
   uint16_t puerto;
 
@@ -269,7 +272,7 @@ void log_in (char *buffer)
 
 }
 
-#define FILENAME        "/dev/sdb"
+#define FILENAME        "./file"
 
 void download ()
 {
@@ -280,7 +283,7 @@ void download ()
   FILE *received_file;
   int remain_data;
   char *received_data;
-  unsigned char received_hash[16];
+  unsigned char received_hash[21];
   unsigned char *calculated_hash;
 
   printf ("Comenzando rutina de descarga\n");
@@ -309,15 +312,19 @@ void download ()
   file_size = atoi (buffer);
   fprintf (stdout, "\nFile size : %d\n", file_size);
 
+  send(down_socket,"ACK",BUFSIZ,0);
+
   received_data = malloc((unsigned long) file_size);
   received_data[0] = '\0';
 
   /* Receiving file hash */
   len = recv (down_socket, buffer, BUFSIZ, 0);
-  snprintf(received_hash,16,"%s",buffer);
-  fprintf (stdout, "\nFile hash : %d\n", received_hash);
-                              //  "\333\361\266\335\016\232[\337\334vb\353\b \244m"
-  received_file = fopen (FILENAME, "w");
+  snprintf((char*)received_hash, (unsigned long) len, "%s", buffer);
+  fprintf (stdout, "\nFile hash : %s\n", received_hash);
+  send(down_socket,"ACK",BUFSIZ,0);
+//0x565538a67010 "oY\002\254#p$\275\320\301v˓\006", <incomplete sequence \304>
+
+  received_file = fopen (FILENAME, "r+");
   if (received_file == NULL)
     {
       fprintf (stderr, "Failed to open file foo --> %s\n", strerror (errno));
@@ -330,17 +337,26 @@ void download ()
   while ((remain_data > 0) && ((len = recv (down_socket, buffer, BUFSIZ, 0)) > 0))
     {
       fwrite (buffer, sizeof (char), (unsigned long) len, received_file);
-//      i += len;
-//      strncat(received_data,buffer, len);
-
-//      memcpy(received_data+i,buffer,len);
-//      received_data[i] = '\0';
-
       remain_data -= len;
       fprintf (stdout, "Receive %zd bytes and we hope :- %d bytes\n", len, remain_data);
     }
-//  fwrite (received_data, sizeof (char), (unsigned long) file_size, received_file);
+
+  mbr file_mbr;
+
+
   fclose (received_file);
+
+//  received_file = fopen (FILENAME, "r+");
+//  if (received_file == NULL)
+//    {
+//      fprintf (stderr, "Failed to open file foo --> %s\n", strerror (errno));
+//
+//      exit (EXIT_FAILURE);
+//    }
+//
+//
+//  getMBR(received_file,&file_mbr);
+//  printPT(&file_mbr);
 //  calculated_hash = md5(FILENAME);
 //
 //  if(strncmp((const char*)calculated_hash,(const char*)received_hash,16)==0){
@@ -351,7 +367,7 @@ void download ()
 
   close (down_socket);
   free(received_data);
-  free(calculated_hash);
+//  free(calculated_hash);
 
   return;
 }

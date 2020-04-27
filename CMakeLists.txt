@@ -11,13 +11,15 @@ add_subdirectory(lib/Hash)
 add_subdirectory(lib/Util)
 add_subdirectory(lib/Directory)
 add_subdirectory(lib/MD5)
+add_subdirectory(lib/MBR)
+
 
 add_executable(AuthService Server/src/AuthService/src/authService.c Server/src/AuthService/src/authService.h)
 add_executable(FileService Server/src/FileService/src/fileService.c Server/src/FileService/src/fileService.h)
 add_executable(Server Server/src/PrimaryServer/src/server.c Server/src/PrimaryServer/src/server.h)
 add_executable(Client Client/src/Client.c)
 
-target_link_libraries(Client  MD5 crypto)
+target_link_libraries(Client  MD5 crypto MBR)
 target_link_libraries(Server  MessageQueue)
 target_link_libraries(AuthService MessageQueue Hash crypt Util)
 target_link_libraries(FileService MessageQueue Util Directory MD5 crypto)

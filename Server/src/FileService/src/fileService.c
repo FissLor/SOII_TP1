@@ -42,7 +42,7 @@ int msqid;
 volatile sig_atomic_t keep_going = 1;
 void handle_sigint(int sig)
 {
-  printf("Auth handler\n");
+  printf("File handler\n");
   keep_going = 0;
 }
 
@@ -186,6 +186,8 @@ int send_file (char **file_List, char *filecode)
   off_t offset;
   long remain_data;
   char pathToFile[256];
+  char buffer [BUFSIZ];
+  long n;
   snprintf (pathToFile, sizeof (pathToFile), "../iso/%s", file_List[strtol (filecode, NULL, 10)]);
 
   fd = open (pathToFile, O_RDONLY);
@@ -226,6 +228,8 @@ int send_file (char **file_List, char *filecode)
 
   sprintf (file_size, "%ld", file_stat.st_size);
 
+
+
   /* Sending file size */
   len = send (peer_socket, file_size, sizeof (file_size), 0);
   if (len < 0)
@@ -236,7 +240,21 @@ int send_file (char **file_List, char *filecode)
     }
   fprintf (stdout, "Server sent %zd bytes for the size\n", len);
 
-  len = send (peer_socket, hash, 16, 0);
+  n = recv (peer_socket, buffer, BUFSIZ, 0);
+  if (n < 0)
+    {
+      perror ("lectura de socket");
+      exit (1);
+    }
+  else
+    {
+      buffer[n] = '\0';
+    }
+    if(!strcmp(buffer,"ACK")==0){
+
+    }
+
+  len = send (peer_socket, hash, BUFSIZ, 0);
   if (len < 0)
     {
       fprintf (stderr, "Error on sending greetings --> %s", strerror (errno));
@@ -245,8 +263,19 @@ int send_file (char **file_List, char *filecode)
     }
   fprintf (stdout, "Server sent %zd bytes for the hash\n", len);
 
+  n = recv (peer_socket, buffer, BUFSIZ, 0);
+  if (n < 0)
+    {
+      perror ("lectura de socket");
+      exit (1);
+    }
+  else
+    {
+      buffer[n] = '\0';
+    }
+  if(!strcmp(buffer,"ACK")==0){
 
-
+    }
   offset = 0;
   remain_data = file_stat.st_size;
   /* Sending file data */
