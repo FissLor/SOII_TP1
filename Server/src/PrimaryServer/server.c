@@ -249,7 +249,7 @@ void attend_client (int32_t newsockfd)
           break;
         }
       snprintf (response, TAM, "%s", prompt);
-      long n = send (newsockfd, response, TAM, 0);
+      n = send (newsockfd, response, TAM, 0);
       if (n < 0)
         {
           perror ("escritura en socket");

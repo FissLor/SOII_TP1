@@ -223,7 +223,7 @@ int log_in (int msqid, Auth_DB database)
   snprintf (pass, sizeof (pass), "%s", msg.mtext);
   fprintf (stderr, "%s: recibi la contrasena: %s\n", PROCES_NAME, pass);
   int8_t user_ID;
-  user_ID = check_user (database.users, user, database.user_count);
+  user_ID = check_user (database, user);
   if (user_ID == -1)
     {
       fprintf (stderr, "%s: Error en usuario o contrasena (1)\n", PROCES_NAME);
@@ -240,7 +240,7 @@ int log_in (int msqid, Auth_DB database)
       mq_send (msg, msqid);
       return 1;
     }
-  if (check_pass (database.passwords, pass, database.user_count))
+  if (check_pass (database, pass))
     {
       database.strikes[user_ID]++;
       if (database.strikes[user_ID] == 3)
