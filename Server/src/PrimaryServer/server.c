@@ -1,4 +1,3 @@
-#include "server.h"
 #include <netdb.h>
 #include <sys/types.h>
 #include <sys/ipc.h>
@@ -11,29 +10,22 @@
 #include <arpa/inet.h>
 #include <signal.h>
 #include <sys/msg.h>
-#include "../../../../lib/MessageQueue/messageQueue.h"
 
-#define MQ_MSGLEN 256
+#include "server.h"
+
+#include "../../../lib/MessageQueue/messageQueue.h"
 
 int32_t sockfd;
 u_int32_t clilen;
 
-struct sockaddr_in serv_addr, cli_addr;
-int msqid;
+struct sockaddr_in serv_addr, cli_addr;///< Estructuras para representar las direcciones de Cliente y Servidor
+int msqid;///< Identificador de la cola de mensajes
 
-int config (int32_t argc, char *argv[]);
-void mainloop ();
-void launch_client ();
-void attend_client__d ();
-void attend_client (int32_t newsockfd);
-void read_socket (char *buffer, int32_t newsockfd);
 
-void address_conversion (int argc, char *argv[], __uint16_t *puerto);
-int32_t log_in (char *userID, int32_t newsockfd);
-void service_init (int8_t);
 
-void blockUser (char *id);
-char *errormsg;
+void respond (int newsockfd, char *service_msg);
+void send_help (int newsockfd);
+
 
 volatile sig_atomic_t keep_going = 1;
 volatile sig_atomic_t Auth_PID;
@@ -42,8 +34,8 @@ volatile sig_atomic_t File_PID;
 void handle_sigint (int sig)
 {
 
-  kill(Auth_PID,sig);
-  kill(File_PID,sig);
+  kill (Auth_PID, sig);
+  kill (File_PID, sig);
 
   shutdown (sockfd, 2);
   printf ("Se cerro el socket\n");
@@ -55,15 +47,9 @@ void handle_sigint (int sig)
   keep_going = 0;
 }
 
-/*!
- *
- * @param argc
- * @param argv
- * @return
- */
 int32_t main (int32_t argc, char *argv[])
 {
-  struct sigaction ctrl_c;
+  struct sigaction ctrl_c; ///< Estructura para hacer un manejo de las senales SIGINT
   memset (&ctrl_c, 0, sizeof (ctrl_c));
   ctrl_c.sa_handler = handle_sigint;
   ctrl_c.sa_flags = 0;
@@ -76,11 +62,6 @@ int32_t main (int32_t argc, char *argv[])
   return 0;
 }
 
-/*!
- *
- * @param argc
- * @param argv
- */
 int config (int argc, char *argv[])
 {
 
@@ -89,8 +70,6 @@ int config (int argc, char *argv[])
 
   //#####################Socket################################
 
-
-//  memset( (char *) &serv_addr, 0, sizeof(serv_addr) );
   address_conversion (argc, argv, &puerto);
 
   sockfd = socket (AF_INET, SOCK_STREAM, 0);
@@ -112,39 +91,18 @@ int config (int argc, char *argv[])
   listen (sockfd, 5);
   clilen = sizeof (cli_addr);
 
-  key_t key;
-  if (create_mq (&msqid, &key, "./Server") != 0)
+  if (create_mq (&msqid, "./Server") != 0)
     {
       fprintf (stderr, "Error al crear la cola de mensajes\n");
       return 1;
     }
 
-//  auth_service_init();
-//  file_service_init();
-
-  service_init(AUTH_SID);
+  service_init (AUTH_SID);
   service_init (FILE_SID);
-
-  struct msgbuf msg;
-
-  snprintf (msg.mtext, sizeof (msg.mtext), "TestForAuth");
-  msg.mtype = MSG_AUTH_OUT;
-  mq_send (msg, msqid);
-
-  msg.mtype = MSG_FILE_OUT;
-  snprintf (msg.mtext, sizeof (msg.mtext), "TestForFile");
-  mq_send (msg, msqid);
 
   printf ("\nEndConfig\n\n");
   return msqid;
 }
-
-/*!
- *
- * @param argc
- * @param argv
- * @param puerto
- */
 
 void address_conversion (int argc, char **argv, __uint16_t *puerto)
 {
@@ -177,13 +135,13 @@ void address_conversion (int argc, char **argv, __uint16_t *puerto)
           exit (EXIT_FAILURE);
         }
       printf ("direccion %d \n", serv_addr.sin_addr.s_addr);
-      *puerto = (u_int16_t) atoi (argv[2]);
+      *puerto = (u_int16_t) strtol (argv[2],NULL,10);
     }
   else if (argc == 2)
     {
       serv_addr.sin_addr.s_addr = DEFAULT_ADDR;
       printf ("direccion %d \n", serv_addr.sin_addr.s_addr);
-      *puerto = (u_int16_t) atoi (argv[1]);
+      *puerto = (u_int16_t) strtol (argv[1],NULL, 10);
     }
   else if (argc < 2)
     {
@@ -194,10 +152,6 @@ void address_conversion (int argc, char **argv, __uint16_t *puerto)
   serv_addr.sin_port = htons (*puerto);
 }
 
-/*!
- *
- * @param msqid
- */
 void mainloop ()
 {
   while (keep_going)
@@ -209,12 +163,12 @@ void mainloop ()
           exit (1);
         }
 
-      if (log_in ("3", newsockfd) == -1)
+      if (log_in (newsockfd) == -1)
         {
           close (newsockfd);
           continue;
         }
-
+      send_help (newsockfd);
       attend_client (newsockfd);
       close (newsockfd);
     }
@@ -232,8 +186,17 @@ void attend_client (int32_t newsockfd)
 
   while (keep_going)
     {
-      struct msgbuf msg;
-      read_socket (input, newsockfd);
+      msgbuf msg;
+      long n = recv (newsockfd, input, TAM - 1, 0);
+      if (n < 0)
+        {
+          perror ("lectura de socket");
+          exit (1);
+        }
+      else
+          input[n] = '\0';
+
+
       if (input[0] == '\0')
         {
           snprintf (response, TAM, "%s", prompt);
@@ -245,7 +208,7 @@ void attend_client (int32_t newsockfd)
             }
           continue;
         }
-      strcpy (cpy, input);
+      strncpy (cpy, input, sizeof (input));
       comm = strtok (cpy, " ");
 
       if (strcmp (comm, "user") == 0)
@@ -259,31 +222,8 @@ void attend_client (int32_t newsockfd)
               fprintf (stderr, "Error en comando\n");
               continue;
             }
-          if (strcmp (msg.mtext, "not-ok") == 0)
-            {
-              printf ("%s comando fallida: ", PROCES_NAME);
-              printf ("%s\n", msg.mtext);
-              snprintf (response, TAM, "Comando fallido\n%s", prompt);
-              long n = send (newsockfd, response, TAM, 0);
-              if (n < 0)
-                {
-                  perror ("escritura en socket");
-                  exit (1);
-                }
-              continue;
-            }
-          else
-            {
-              printf ("%s: comando exitoso\n", PROCES_NAME);
-              snprintf (response, TAM, "%s\n%s", msg.mtext, prompt);
-              long n = send (newsockfd, response, TAM, 0);
-              if (n < 0)
-                {
-                  perror ("escritura en socket");
-                  exit (1);
-                }
-              continue;
-            }
+          respond (newsockfd, msg.mtext);
+          continue;
         }
       else if (strcmp (comm, "file") == 0)
         {
@@ -296,33 +236,8 @@ void attend_client (int32_t newsockfd)
               fprintf (stderr, "Error en comando\n");
               continue;
             }
-
-          if (strcmp (msg.mtext, "not-ok") == 0)
-            {
-              printf ("%s comando fallido: ", PROCES_NAME);
-              printf ("%s\n", msg.mtext);
-              snprintf (response, TAM, "Comando fallido\n%s", prompt);
-              long n = send (newsockfd, response, TAM, 0);
-              if (n < 0)
-                {
-                  perror ("escritura en socket");
-                  exit (1);
-                }
-              continue;
-            }
-          else
-            {
-              printf ("%s: comando exitoso\n", PROCES_NAME);
-              snprintf (response, TAM, "%s\n%s", msg.mtext, prompt);
-              long n = send (newsockfd, response, TAM, 0);
-              if (n < 0)
-                {
-                  perror ("escritura en socket");
-                  exit (1);
-                }
-              continue;
-            }
-
+          respond (newsockfd, msg.mtext);
+          continue;
         }
         // Verificación de si hay que terminar
       else if (!strcmp ("exit", comm))
@@ -343,36 +258,10 @@ void attend_client (int32_t newsockfd)
     }
 }
 
-/*!
- *
- * @param buffer
- */
-void read_socket (char *buffer, int32_t newsockfd)
+int32_t log_in (int32_t newsockfd)
 {
-  long n;
-//    printf("%s", buffer);
-
-  n = recv (newsockfd, buffer, TAM - 1, 0);
-
-  if (n < 0)
-    {
-      perror ("lectura de socket");
-      exit (1);
-    }
-  else
-    {
-      buffer[n] = '\0';
-    }
-
-  printf ("%s: se recibio peticion: %s\n", PROCES_NAME, buffer);
-
-}
-
-int32_t log_in (char *userID, int32_t newsockfd)
-{
-
   char buffer[TAM];
-  struct msgbuf msg;
+  msgbuf msg;
   char user[100];
   char password[100];
   int32_t checked = 0;
@@ -382,12 +271,14 @@ int32_t log_in (char *userID, int32_t newsockfd)
   for (int i = 0; i < 3; i++)
     {
 
-      memset (buffer, 0, TAM);
-      if (read (newsockfd, buffer, TAM - 1) < 0)
+      long n;
+      n = recv (newsockfd, buffer, TAM - 1, 0);
+      if (n < 0)
         {
           perror ("lectura de socket");
           exit (1);
         }
+      buffer[n] = '\0';
       if (strcmp (buffer, "exit") == 0)
         {
 
@@ -401,12 +292,13 @@ int32_t log_in (char *userID, int32_t newsockfd)
           perror ("escritura en socket");
           exit (1);
         }
-
-      if (read (newsockfd, buffer, TAM - 1) < 0)
+      n = recv (newsockfd, buffer, TAM - 1, 0);
+      if (n < 0)
         {
           perror ("lectura de socket");
           exit (1);
         }
+        buffer[n] = '\0';
       if (strcmp (buffer, "exit") == 0)
         {
 
@@ -439,12 +331,25 @@ int32_t log_in (char *userID, int32_t newsockfd)
         {
           printf ("%s Autenticacion fallida: ", PROCES_NAME);
           printf ("%s\n", msg.mtext);
+          if (send (newsockfd, msg.mtext, sizeof (msg.mtext), 0) < 0)
+            {
+              perror ("escritura en socket");
+              exit (1);
+            }
+          recv (newsockfd, buffer, TAM, 0);
           continue;
         }
       else
         {
           printf ("%s: Autenticacion exitosa\n", PROCES_NAME);
           checked = 1;
+          if (send (newsockfd, "Autenticacion exitosa", TAM, 0) < 0)
+            {
+              perror ("escritura en socket");
+              exit (1);
+            }
+          recv (newsockfd, buffer, TAM, 0);
+
           break;
         }
 
@@ -454,15 +359,10 @@ int32_t log_in (char *userID, int32_t newsockfd)
     {
       return 0;
     }
-  blockUser (userID);
   return -1;
 }
 
-void blockUser (char *id)
-{
-  printf ("%s", id);
-  return;
-}
+
 
 void service_init (int8_t serv)
 {
@@ -475,12 +375,13 @@ void service_init (int8_t serv)
     {
       path = FILE_PATH;
       serv_str = "Archivos";
-      snprintf(sockfd_str, sizeof(sockfd_str),"%d", sockfd);
+      snprintf (sockfd_str, sizeof (sockfd_str), "%d", sockfd);
     }
   else
     {
       path = AUTH_PATH;
       serv_str = "Autenticacion";
+      sockfd_str[0] = '\0';
     }
 
   int pid = fork ();
@@ -493,20 +394,15 @@ void service_init (int8_t serv)
   if (pid == 0)
     {  // Proceso hijo
 
-//      if (serv == FILE_SID)
-//        {
-////          close();
-//
-//        }
-//      else
-//        {
-//          path = AUTH_PATH;
-//          serv_str = "Autenticacion";
-//          snprintf(sockfd_str,sizeof(sockfd_str),'\0');
-//        }
+      if (serv == FILE_SID)
+        {
+        }
+      else
+        {
+          close (sockfd);
+        }
 
-
-      char *argv[] = {path, "./Server",sockfd_str, (char *) NULL};
+      char *argv[] = {path, "./Server", sockfd_str, (char *) NULL};
       if (execv (argv[0], argv) == -1)
         {
           perror ("execv: ");
@@ -525,5 +421,51 @@ void service_init (int8_t serv)
           Auth_PID = pid;
         }
       printf ("%s: Se inicio el Servicio de %s, proceso hijo:  %d\n", PROCES_NAME, serv_str, pid);
+    }
+}
+
+void respond (int newsockfd, char *service_msg)
+{
+  char response[TAM];
+  char *prompt = "Ingrese comando: ";
+
+  if (strcmp (service_msg, "not-ok") == 0)
+    {
+      printf ("%s comando fallida: ", PROCES_NAME);
+      printf ("%s\n", service_msg);
+      snprintf (response, TAM, "Comando fallido\n%s", prompt);
+      long n = send (newsockfd, response, TAM, 0);
+      if (n < 0)
+        {
+          perror ("escritura en socket");
+          exit (1);
+        }
+    }
+  else
+    {
+      printf ("%s: comando exitoso\n", PROCES_NAME);
+      snprintf (response, TAM, "%s\n%s", service_msg, prompt);
+      long n = send (newsockfd, response, TAM, 0);
+      if (n < 0)
+        {
+          perror ("escritura en socket");
+          exit (1);
+        }
+    }
+}
+
+void send_help (int newsockfd)
+{
+  char help[2048];
+  sprintf (help, "Comandos:\n"
+                 "user ls                   Lista los usuarios, su estado y ultima conexion\n"
+                 "user passwd [new_pass]    Cambia la contrase;a actual por new_pass\n"
+                 "file ls                   Lista las imagenes booteables disponibles para descarga junto a su codigo\n"
+                 "file down [code]          Descarga la imagen especificada por code\n");
+  long n = send (newsockfd, help, strlen (help), 0);
+  if (n < 0)
+    {
+      perror ("escritura en socket");
+      exit (1);
     }
 }

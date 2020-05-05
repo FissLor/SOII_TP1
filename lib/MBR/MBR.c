@@ -11,59 +11,35 @@
 
 #include "MBR.h"
 
-int main(){
-  FILE * file;
-
-  file = fopen ("/home/lfiss/CLionProjects/TP1/SOI-TP1/Client/bin", "r+");
-  if (file == NULL)
-    {
-      fprintf (stderr, "Failed to open file foo --> %s\n", strerror (errno));
-
-      exit (EXIT_FAILURE);
-    }
-  mbr file_mbr;
-  getMBR(file,&file_mbr);
-  printPT(&file_mbr);
-  fclose(file);
-  return 0;
-
-}
-
-
-void getMBR(FILE* file,  mbr *masterBR)
+void getMBR (FILE *file, MBR *masterBR)
 {
-
-
-
-  unsigned long n = fread(&masterBR,1,sizeof(mbr),file);
-  if(n==0){
-    perror("No se pudo obtener MBR");
-  }
-
-}
-
-void printPT(mbr *masterBR)
-{
-  partition table_entries[4];
-  table_entries[0] = masterBR->partition_table.table_entry1;
-  printf("BOOT\tCHS_START_VALUES\tTYPE\tCHS_END_VALUES\tSTART\tSIZE");
-  for(int i=0;i<4;i++)
+  unsigned long n = fread (masterBR, 1, MBR_SIZE, file);
+  if (n == 0)
     {
-      printf("%2x\t",table_entries[i].boot);
-      for(int j = 0; j<3;j++)
-        printf("%2x ",table_entries[i].chs_start[j]);
-      printf("\t%2x\t",table_entries[i].type);
-      for(int j = 0; j<3;j++)
-        printf("%2x ",table_entries[i].chs_end[j]);
-      printf("\t");
-      for(int j = 0; j<4;j++)
-        printf("%2x ",table_entries[i].start[j]);
-      printf("\t");
-      for(int j = 0; j<4;j++)
-        printf("%2x ",table_entries[i].size[j]);
-
-      printf("\n");
-
+      perror ("No se pudo obtener MBR");
     }
 }
 
+void printPT (MBR *masterBR)
+{
+  PARTITION *table_entries = masterBR->partition_table.table_entries;
+
+  printf ("BOOT\tCHS_START_VALUES\tTYPE\tCHS_END_VALUES\tSTART\t\tSIZE\n");
+  for (int i = 0; i < 4; i++)
+    {
+      printf ("%02x\t\t", table_entries[i].boot);
+      for (int j = 0; j < 3; j++)
+        printf ("%02x ", table_entries[i].chs_start[j]);
+      printf ("\t %02x\t      ", table_entries[i].type);
+      for (int j = 0; j < 3; j++)
+        printf ("%02x ", table_entries[i].chs_end[j]);
+
+      printf ("%6u", (uint32_t) table_entries[i].start);
+      printf ("\t");
+
+      printf ("%12u ", (uint32_t) table_entries[i].size);
+
+      printf ("\n");
+
+    }
+}
