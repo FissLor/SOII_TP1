@@ -6,7 +6,7 @@ set(CMAKE_C_STANDARD 11)
 find_package( Doxygen )
 
 if ( DOXYGEN_FOUND )
-    set( DOXYGEN_OUTPUT_DIRECTORY CMAKE_SOURCE_DIR/docs )
+    set( DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/docs )
 #    set( DOXYGEN_COLLABORATION_GRAPH YES )
     set( DOXYGEN_EXTRACT_ALL YES )
     set ( DOXYGEN_OPTIMIZE_OUTPUT_FOR_C YES )
@@ -58,26 +58,20 @@ target_link_libraries(FileService MessageQueue Util File_DB MD5 crypto)
 
 set_target_properties( AuthService
         PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/lib"
-        LIBRARY_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/lib"
-        RUNTIME_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/bin"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Server/bin"
         )
 
 set_target_properties( FileService
         PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/lib"
-        LIBRARY_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/lib"
-        RUNTIME_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/bin"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}Server/bin"
         )
 set_target_properties( Server
         PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/lib"
-        LIBRARY_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/lib"
-        RUNTIME_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Server/bin"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Server/bin"
         )
 set_target_properties( Client
         PROPERTIES
-        ARCHIVE_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Client/lib"
-        LIBRARY_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Client/lib"
-        RUNTIME_OUTPUT_DIRECTORY "CMAKE_SOURCE_DIR/Client/bin"
+
+
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Client/bin"
         )
