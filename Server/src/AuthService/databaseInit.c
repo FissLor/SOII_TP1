@@ -24,14 +24,14 @@ int check_password();
 int
 main(void)
 {
-  FILE *dat = fopen("./dat","w");
+  FILE *dat = fopen("../database/dat","w");
   char * users[] = {"lfiss", "Tbone", "admin"};
   char * passwords[] = {"lfiss", "Tbone", "admin"};
   int n = sizeof(users)/sizeof(users[0]);
   for(int i=0; i < n; i++){
 //    users[i]=hash(users[i]);
       passwords[i]=hash(passwords[i]);
-      fprintf(dat, "%s %s\n", users[i],passwords[i]);
+      fprintf(dat, "%s %s %s\n", users[i],passwords[i],"-1");
     }
 
 

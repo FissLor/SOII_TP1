@@ -75,7 +75,7 @@ void mainloop (int msqid, Auth_DB *database)//, char users[100][64], char passwo
   while (keep_going)
     {
       int status;
-      status = log_in (msqid, *database);
+      status = log_in (msqid, database);
 
       if (status == 1)
         {
@@ -94,7 +94,7 @@ void mainloop (int msqid, Auth_DB *database)//, char users[100][64], char passwo
     }
 }
 
-__int8_t handle_req (int msqid, Auth_DB *database)
+__int8_t handle_req (int msqid, Auth_DB *database_ptr)
 {
   char request[MSG_SIZE];
   msgbuf msg;
@@ -121,13 +121,13 @@ __int8_t handle_req (int msqid, Auth_DB *database)
       else if (strcmp (parsed[1], USER_LS) == 0)
         {
 
-          list_users (msqid, *database);
+          list_users (msqid, *database_ptr);
           continue;
         }
 
       else if (strcmp (parsed[1], USER_PASSWD) == 0)
         {
-          change_password (parsed[2], msqid, database);
+          change_password (parsed[2], msqid, database_ptr);
           continue;
         }
 
@@ -153,13 +153,16 @@ int change_password (char *new_password, int msqid, Auth_DB *database)
 {
 //  char new_password [200];
   msgbuf msg;
+  char * hashed_new_password = hash (new_password);
 
-  fprintf (stderr, "%s", database->passwords[database->active]);
-  snprintf (database->passwords[database->active], sizeof (database->passwords[database->active]), "%s", hash (new_password));
+  fprintf (stderr, "%s\n", database->passwords[database->active]);
+  snprintf (database->passwords[database->active], sizeof (database->passwords[database->active]), "%s", hashed_new_password);
   fprintf (stderr, "%s", database->passwords[database->active]);
   snprintf (msg.mtext, sizeof (msg.mtext), "Password changed");
   msg.mtype = MSG_OUT;
   mq_send (msg, msqid);
+
+  data_save(*database);
   return 0;
 }
 
@@ -193,12 +196,12 @@ int list_users (int msqid, Auth_DB database)
   return 0;
 }
 
-int log_in (int msqid, Auth_DB database)
+int log_in (int msqid, Auth_DB *database_ptr)
 {
   msgbuf msg;
 
-  char user[200];
-  char pass[200];
+  char user[MSG_SIZE];
+  char pass[MSG_SIZE];
   fprintf (stderr, "%s : Im logging ", PROCES_NAME);
 
 //  memset(msg.mtext,0,sizeof(msg.mtext));
@@ -210,7 +213,7 @@ int log_in (int msqid, Auth_DB database)
     }
 
   snprintf (user, sizeof (user), "%s", msg.mtext);
-  fprintf (stderr, "%srecibi el usuario: %s\n", PROCES_NAME, user);
+  fprintf (stderr, "%srecibi usuario\n", PROCES_NAME);
 
 
 
@@ -221,9 +224,9 @@ int log_in (int msqid, Auth_DB database)
     }
 
   snprintf (pass, sizeof (pass), "%s", msg.mtext);
-  fprintf (stderr, "%s: recibi la contrasena: %s\n", PROCES_NAME, pass);
+  fprintf (stderr, "%s: recibi contraseña\n", PROCES_NAME);
   int8_t user_ID;
-  user_ID = check_user (database, user);
+  user_ID = check_user (*database_ptr, user);
   if (user_ID == -1)
     {
       fprintf (stderr, "%s: Error en usuario o contrasena (1)\n", PROCES_NAME);
@@ -232,7 +235,7 @@ int log_in (int msqid, Auth_DB database)
       mq_send (msg, msqid);
       return 1;
     }
-  if (database.blocked[user_ID] == 1)
+  if (database_ptr->blocked[user_ID] == 1)
     {
       fprintf (stderr, "%s: Usuario bloqueado\n", PROCES_NAME);
       snprintf (msg.mtext, sizeof (msg.mtext), "Usuario bloqueado");
@@ -240,12 +243,12 @@ int log_in (int msqid, Auth_DB database)
       mq_send (msg, msqid);
       return 1;
     }
-  if (check_pass (database, pass))
+  if (check_pass (*database_ptr, pass)==1)
     {
-      database.strikes[user_ID]++;
-      if (database.strikes[user_ID] == 3)
+      database_ptr->strikes[user_ID]++;
+      if (database_ptr->strikes[user_ID] == 3)
         {
-          database.blocked[user_ID] = 1;
+          database_ptr->blocked[user_ID] = 1;
           fprintf (stderr, "%s: Usuario ha sido bloqueado\n", PROCES_NAME);
           snprintf (msg.mtext, sizeof (msg.mtext), "USUARIO O CONTRASENA ERRONEOS: El usuario ha sido bloqueado");
           msg.mtype = MSG_OUT;
@@ -262,8 +265,8 @@ int log_in (int msqid, Auth_DB database)
       return 1;
     }
 
-  database.active = user_ID;
-  database.last_conection[user_ID] = time(NULL);
+  database_ptr->active = user_ID;
+  database_ptr->last_conection[user_ID] = time(NULL);
   snprintf (msg.mtext, sizeof (msg.mtext), "ok");
   msg.mtype = MSG_OUT;
   mq_send (msg, msqid);

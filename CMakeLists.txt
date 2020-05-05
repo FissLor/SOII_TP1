@@ -50,6 +50,9 @@ add_executable(AuthService Server/src/AuthService/authService.c Server/src/AuthS
 add_executable(FileService Server/src/FileService/fileService.c Server/src/FileService/fileService.h)
 add_executable(Server Server/src/PrimaryServer/server.c Server/src/PrimaryServer/server.h)
 add_executable(Client Client/src/Client.c Client/src/Client.h)
+add_executable(database_init Server/src/AuthService/databaseInit.c)
+
+target_link_libraries(database_init crypt)
 
 target_link_libraries(Client  MD5 crypto MBR)
 target_link_libraries(Server  MessageQueue)
@@ -57,6 +60,11 @@ target_link_libraries(AuthService MessageQueue Auth_DB crypt Util)
 target_link_libraries(FileService MessageQueue Util File_DB MD5 crypto)
 
 set_target_properties( AuthService
+        PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Server/bin"
+        )
+
+set_target_properties( database_init
         PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Server/bin"
         )

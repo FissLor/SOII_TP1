@@ -53,7 +53,7 @@ char *hash (char *plain_password)
 
 int data_fetch (Auth_DB *database)
 {
-  FILE *dat = fopen ("./dat", "r");
+  FILE *dat = fopen ("../database/dat", "r");
   if (dat == NULL)
     {
       fprintf (stderr, "No existe archivo dat");
@@ -61,15 +61,19 @@ int data_fetch (Auth_DB *database)
     }
   char user_buff[64];
   char pass_buff[64];
+  char last_conection_buff[64];
 
   database->users = malloc (0 * sizeof (char[64]));
   database->passwords = malloc (0 * sizeof (char[64]));
+  database->last_conection = malloc (0 * sizeof (*database->last_conection));
 
-  u_int32_t i = 0;
-  while (fscanf (dat, "%63s %63s", user_buff, pass_buff) > 0)
+
+  u_int32_t i = 0;  database->last_conection = malloc (0 * sizeof (*database->last_conection));
+  while (fscanf (dat, "%63s %63s %63s", user_buff, pass_buff,last_conection_buff) > 0)
     {
       database->users = realloc (database->users, (unsigned long) (i + 1) * sizeof (char[64]));
       database->passwords = realloc (database->passwords, (unsigned long) (i + 1) * sizeof (char[64]));
+      database->last_conection = realloc (database->last_conection,(unsigned long)(i+1) * sizeof (*database->last_conection));
       strcpy (database->users[i], user_buff);
       strcpy (database->passwords[i], pass_buff);
       i = i + 1;
@@ -79,13 +83,13 @@ int data_fetch (Auth_DB *database)
   database->active = -1;
   database->strikes = malloc (i * sizeof (*database->strikes));
   database->blocked = malloc (i * sizeof (*database->blocked));
-  database->last_conection = malloc (i * sizeof (*database->last_conection));
+//  database->last_conection = malloc (i * sizeof (*database->last_conection));
 
   for (i = 0; i < database->user_count; i++)
     {
       database->strikes[i] = 0;
       database->blocked[i] = 0;
-      database->last_conection[i] = (time_t) -1;
+//      database->last_conection[i] = (time_t) -1;
     }
 
   return 0;
@@ -114,4 +118,23 @@ int8_t check_user (Auth_DB database, char *user_to_check)
         }
     }
   return -1;
+}
+
+int data_save (Auth_DB database)
+{
+
+  FILE *dat = fopen ("./dat", "w+");
+  if (dat == NULL)
+    {
+      fprintf (stderr, "No existe archivo dat");
+      return -1;
+    }
+
+  for (u_int32_t i = 0; i < database.user_count; i++)
+    {
+      fprintf (dat, "%s %s %ld\n", database.users[i], database.passwords[i], database.last_conection[i]);
+
+    }
+  fclose (dat);
+  return 0;
 }

@@ -66,5 +66,11 @@ int check_pass (Auth_DB database, char *password_to_check );
  * @return
  */
 int8_t check_user (Auth_DB database, char *user_to_check);
+/*!
+ *
+ * @param database
+ * @return Devuelve 0 si la operacion fue exitosa
+ */
+int data_save (Auth_DB database);
 
 #endif // SERVER_HASH_H

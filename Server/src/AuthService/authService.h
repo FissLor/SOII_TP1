@@ -42,18 +42,19 @@ int config (char *filePath, Auth_DB *database);
 /*!
  * \brief Verifica el logueo de usuarios, con los datos proporcionados por Primary Server
  * @param [in]msqid Identificador de la cola de mensajes
- * @param [in]database Contiene toda la informacion relacionada a la autenticacion
+ * @param [in]database_ptr Contiene toda la informacion relacionada a la autenticacion
  * @return Devuelve 0, si la operacion fue exitosa.
  */
-int log_in (int msqid, Auth_DB database);
+int log_in (int msqid, Auth_DB *database_ptr);
 
 /*!
  * \brief Encargada de manejar las solicitudes derivadas al servicio de autenticacion por el Primary Server
  * @param [in]msqid Identificador de la cola de mensajes
- * @param [in,out]database Contiene toda la informacion relacionada a la autenticacion
+ *
+ * @param [in,out]database_ptr Contiene toda la informacion relacionada a la autenticacion
  * @return Devuelve 0, si la operacion fue exitosa.
  */
-__int8_t handle_req (int msqid, Auth_DB *database);
+__int8_t handle_req (int msqid, Auth_DB *database_ptr);
 
 /*!
  * \brief Ciclo principal del servicio
