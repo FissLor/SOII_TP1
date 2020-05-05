@@ -54,10 +54,6 @@ Explain what these tests test and why
 Give an example
 ```
 
-## Deployment
-
-Add additional notes about how to deploy this on a live system
-
 ## Built With
 
 * [Maven](https://maven.apache.org/) - Dependency Management
@@ -68,7 +64,7 @@ Add additional notes about how to deploy this on a live system
 
 ## Licencia
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details
+Este proyecto esta licenciado bajo  GNU General Public License- ver [LICENSE.md](LICENSE.md) para mas detalles.
 
 
 
