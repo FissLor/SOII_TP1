@@ -18,8 +18,8 @@
 #define DEFAULT_PORT 2000
 #define DEFAULT_ADDR "0.0.0.0"
 
-//#define DEV_BY_ID  "/dev/disk/by-id"
-#define DEV_BY_ID  "."
+#define DEV_BY_ID  "/dev/disk/by-id"
+
 
 #define ACK "ACK"
 
@@ -120,6 +120,7 @@ void mainloop ()
   long n;
   boolean terminar = FALSE;
   char buffer[TAM];
+  char prompt[20];
 
   log_in (buffer);
 
@@ -132,10 +133,27 @@ void mainloop ()
   buffer[n] = '\0';
   printf ("%s", buffer);
 
+  send (sockfd, ACK, 3, 0);
+
+  n = recv (sockfd, buffer, TAM, 0);
+  if (n < 0)
+    {
+      perror ("lectura de socket");
+      exit (1);
+    }
+  buffer[n] = '\0';
+  snprintf (prompt, 20, "%s", buffer);
+  printf ("%s", prompt);
+
   while (1)
     {
       fgets (buffer, TAM - 1, stdin);
       buffer[strcspn (buffer, "\n")] = '\0';
+      if (strlen (buffer) == 0)
+        {
+          printf ("%s", prompt);
+          continue;
+        }
 
       n = send (sockfd, buffer, strlen (buffer), 0);
       if (n < 0)
@@ -165,6 +183,7 @@ void mainloop ()
           if (n == 0)
             {
               download ();
+              printf ("%s", prompt);
             }
 
         }
@@ -181,7 +200,7 @@ void mainloop ()
 int get_pass (char *password)
 {
   struct termios oflags = {0, 0, 0, 0, 0, {0, 0, 0}, 0, 0};
-  struct termios nflags = {0, 0, 0, 0, 0, {0, 0, 0}, 0, 0};;
+  struct termios nflags = {0, 0, 0, 0, 0, {0, 0, 0}, 0, 0};
 
   /* Desactivando Echo */
   tcgetattr (fileno (stdin), &oflags);

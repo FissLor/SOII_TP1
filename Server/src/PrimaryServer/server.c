@@ -26,7 +26,6 @@ int msqid;///< Identificador de la cola de mensajes
 void respond (int newsockfd, char *service_msg);
 void send_help (int newsockfd);
 
-
 volatile sig_atomic_t keep_going = 1;
 volatile sig_atomic_t Auth_PID;
 volatile sig_atomic_t File_PID;
@@ -135,13 +134,13 @@ void address_conversion (int argc, char **argv, __uint16_t *puerto)
           exit (EXIT_FAILURE);
         }
       printf ("direccion %d \n", serv_addr.sin_addr.s_addr);
-      *puerto = (u_int16_t) strtol (argv[2],NULL,10);
+      *puerto = (u_int16_t) strtol (argv[2], NULL, 10);
     }
   else if (argc == 2)
     {
       serv_addr.sin_addr.s_addr = DEFAULT_ADDR;
       printf ("direccion %d \n", serv_addr.sin_addr.s_addr);
-      *puerto = (u_int16_t) strtol (argv[1],NULL, 10);
+      *puerto = (u_int16_t) strtol (argv[1], NULL, 10);
     }
   else if (argc < 2)
     {
@@ -182,32 +181,29 @@ void attend_client (int32_t newsockfd)
   char response[TAM];
   response[0] = '\0';
   char *prompt = "Ingrese comando: ";
+  long n;
+
+  n = send (newsockfd, prompt, TAM, 0);
+  if (n < 0)
+    {
+      perror ("escritura en socket");
+      exit (1);
+    }
+
   char *comm;
 
   while (keep_going)
     {
       msgbuf msg;
-      long n = recv (newsockfd, input, TAM - 1, 0);
+      n = recv (newsockfd, input, TAM - 1, 0);
       if (n < 0)
         {
           perror ("lectura de socket");
           exit (1);
         }
       else
-          input[n] = '\0';
+        input[n] = '\0';
 
-
-      if (input[0] == '\0')
-        {
-          snprintf (response, TAM, "%s", prompt);
-          long n = send (newsockfd, response, TAM, 0);
-          if (n < 0)
-            {
-              perror ("escritura en socket");
-              exit (1);
-            }
-          continue;
-        }
       strncpy (cpy, input, sizeof (input));
       comm = strtok (cpy, " ");
 
@@ -298,7 +294,7 @@ int32_t log_in (int32_t newsockfd)
           perror ("lectura de socket");
           exit (1);
         }
-        buffer[n] = '\0';
+      buffer[n] = '\0';
       if (strcmp (buffer, "exit") == 0)
         {
 
@@ -361,8 +357,6 @@ int32_t log_in (int32_t newsockfd)
     }
   return -1;
 }
-
-
 
 void service_init (int8_t serv)
 {
@@ -468,4 +462,5 @@ void send_help (int newsockfd)
       perror ("escritura en socket");
       exit (1);
     }
+  recv (newsockfd, help, 2048, 0);
 }
