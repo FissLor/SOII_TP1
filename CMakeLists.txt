@@ -63,7 +63,7 @@ set_target_properties( AuthService
 
 set_target_properties( FileService
         PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}Server/bin"
+        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/Server/bin"
         )
 set_target_properties( Server
         PROPERTIES
