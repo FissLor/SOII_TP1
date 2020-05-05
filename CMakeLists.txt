@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.16)
-project(SOI_TP1 C)
+project(SOII_TP1 C)
 
 set(CMAKE_C_STANDARD 11)
 

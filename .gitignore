@@ -58,6 +58,19 @@ dkms.conf
 /Server/iso/bionicpup32-8.0-uefi.iso
 /Server/iso/bionicpup64-8.0-uefi.iso
 
-
+#BINs
 /Server/bin/
 /Client/bin/
+
+#Cmake
+/lib/MD5/CMakeFiles/
+/lib/MD5/CMakeFiles/
+/lib/MD5/cmake_install.cmake
+/lib/MD5/libMD5.a
+/lib/MD5/Makefile
+/lib/MD5/
+/lib/MessageQueue/CMakeFiles/
+/lib/MessageQueue/cmake_install.cmake
+/lib/MessageQueue/libMessageQueue.a
+/lib/MessageQueue/Makefile
+/lib/Auth_DB/Makefile
